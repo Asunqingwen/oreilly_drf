@@ -6,6 +6,7 @@
 # @Software: PyCharm
 # @Blog    ：https://blog.csdn.net/Asunqingwen
 # @GitHub  ：https://github.com/Asunqingwen
+from django.contrib.auth.models import User
 from rest_framework import serializers
 
 from drones.models import DroneCategory, Drone, Pilot, Competition
@@ -24,12 +25,15 @@ class DroneCategorySerializer(serializers.HyperlinkedModelSerializer):
 
 
 class DroneSerializer(serializers.HyperlinkedModelSerializer):
-	# display th category name
+	# display the category name
 	drone_category = serializers.SlugRelatedField(queryset=DroneCategory.objects.all(), slug_field='name')
+	# display the owner's username(read-only)
+	owner = serializers.ReadOnlyField(source='owner.username')
 
 	class Meta:
 		model = Drone
-		fields = ('url', 'name', 'drone_category', 'manufacturing_date', 'has_it_competed', 'inserted_timestamp')
+		fields = (
+		'url', 'name', 'drone_category', 'owner', 'manufacturing_date', 'has_it_competed', 'inserted_timestamp')
 
 
 class CompetitionSerializer(serializers.HyperlinkedModelSerializer):
@@ -61,3 +65,17 @@ class PilotCompetitionSerializer(serializers.ModelSerializer):
 		exclude = ()
 		model = Competition
 		fileds = ('url', 'pk', 'distance_in_feet', 'distance_achievement_date', 'pilot', 'drone')
+
+
+class UserDroneSerializer(serializers.HyperlinkedModelSerializer):
+	class Meta:
+		model = Drone
+		fields = ('url', 'name')
+
+
+class UserSerializer(serializers.HyperlinkedModelSerializer):
+	drones = UserDroneSerializer(many=True, read_only=True)
+
+	class Meta:
+		models = User
+		fields = ('url', 'pk', 'username', 'drone')
